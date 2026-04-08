@@ -394,16 +394,6 @@
             <span id="toggleCompany2Label">Company 2</span>
         </div>
 
-        <div id="chartsContainer" class="charts-container">
-            <!-- Chart canvases remain the same -->
-            <div class="chart-card"><h3>📈 Monthly Revenue Trend</h3><div class="chart-container"><canvas id="monthlyChart"></canvas></div></div>
-            <div class="chart-card"><h3>📈 Monthly YoY Change</h3><div class="chart-container"><canvas id="monthlyYoYChart"></canvas></div></div>
-            <div class="chart-card"><h3>📊 Quarterly Revenue Trend</h3><div class="chart-container"><canvas id="quarterlyChart"></canvas></div></div>
-            <div class="chart-card"><h3>📊 Quarterly YoY Change</h3><div class="chart-container"><canvas id="quarterlyYoYChart"></canvas></div></div>
-            <div class="chart-card"><h3>📅 Yearly Revenue Trend</h3><div class="chart-container"><canvas id="yearlyChart"></canvas></div></div>
-            <div class="chart-card"><h3>📅 Yearly YoY Change</h3><div class="chart-container"><canvas id="yearlyYoYChart"></canvas></div></div>
-        </div>
-
         <div id="dataTableContainer" class="data-table-container">
             <h3>📋 Monthly Revenue Data</h3>
             <table id="dataTable" class="data-table">
@@ -427,6 +417,16 @@
                 <tbody id="dataTableBody">
                 </tbody>
             </table>
+        </div>
+
+        <div id="chartsContainer" class="charts-container">
+            <!-- Chart canvases remain the same -->
+            <div class="chart-card"><h3>📈 Monthly Revenue Trend</h3><div class="chart-container"><canvas id="monthlyChart"></canvas></div></div>
+            <div class="chart-card"><h3>📈 Monthly YoY Change</h3><div class="chart-container"><canvas id="monthlyYoYChart"></canvas></div></div>
+            <div class="chart-card"><h3>📊 Quarterly Revenue Trend</h3><div class="chart-container"><canvas id="quarterlyChart"></canvas></div></div>
+            <div class="chart-card"><h3>📊 Quarterly YoY Change</h3><div class="chart-container"><canvas id="quarterlyYoYChart"></canvas></div></div>
+            <div class="chart-card"><h3>📅 Yearly Revenue Trend</h3><div class="chart-container"><canvas id="yearlyChart"></canvas></div></div>
+            <div class="chart-card"><h3>📅 Yearly YoY Change</h3><div class="chart-container"><canvas id="yearlyYoYChart"></canvas></div></div>
         </div>
     </div>
 
@@ -480,6 +480,18 @@
                     }
                 } catch (error) {
                     console.error('Autocomplete fetch error:', error);
+                }
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const first_suggestion = suggestionsContainer.querySelector('div');
+                    if (first_suggestion && suggestionsContainer.style.display !== 'none') {
+                        searchInput.value = first_suggestion.textContent;
+                        codeInput.value = first_suggestion.dataset.code;
+                        suggestionsContainer.innerHTML = '';
+                        suggestionsContainer.style.display = 'none';
+                    }
                 }
             });
 
