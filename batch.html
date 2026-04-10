@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Revenue</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header a {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+        .header a:hover { text-decoration: underline; }
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .input-section .left {
+            flex: 1;
+            min-width: 280px;
+        }
+        .input-section .right {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 180px;
+        }
+        .input-section label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        .input-section textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        .input-section textarea:focus,
+        .input-section input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .input-section input[type="month"],
+        .input-section input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .fetch-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .fetch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        .fetch-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress-bar-container {
+            display: none;
+            margin-bottom: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 28px;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+        .table-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+        .table-section h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: right;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        th.date-col, td.date-col {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #f8f9fa;
+        }
+        th.date-col {
+            z-index: 3;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        tr:hover td { background-color: #f8f9fa; }
+        tr:hover td.date-col { background-color: #eef0f2; }
+        .positive { color: #28a745; font-weight: 600; }
+        .negative { color: #dc3545; font-weight: 600; }
+        .sum-row td {
+            font-weight: 700;
+            border-top: 2px solid #495057;
+            background: #f0f0f0;
+        }
+        .company-header {
+            text-align: center !important;
+            border-left: 2px solid rgba(255,255,255,0.3);
+        }
+        td.border-left {
+            border-left: 1px solid #dee2e6;
+        }
+        .error-message {
+            background: linear-gradient(45deg, #ffe5e5, #fff0f0);
+            color: #dc3545;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #dc3545;
+            font-size: 0.9rem;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: #868e96;
+            margin-top: 4px;
+        }
+        @media (max-width: 768px) {
+            .input-section { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Batch Revenue</h1>
+        <a href="/">← Single Compare</a>
+            <span style="color: #ccc;">|</span>
+            <a href="/kai.html">Kai's Table →</a>
+    </div>
+
+    <div class="input-section">
+        <div class="left">
+            <label for="tickerInput">Tickers (one per line, or comma/tab separated)</label>
+            <textarea id="tickerInput" placeholder="6415&#10;3665&#10;6857 TT&#10;2330"></textarea>
+            <div class="hint">Supports: 6415, 6415 TT, 6415.TT — paste directly from Excel.</div>
+        </div>
+        <div class="right">
+            <div>
+                <label for="refDate">Reference Month</label>
+                <input type="month" id="refDate">
+            </div>
+            <div>
+                <label for="numMonths">Months to Show</label>
+                <input type="number" id="numMonths" value="3" min="3" max="60">
+            </div>
+            <button id="fetchBtn" class="fetch-btn">Fetch Revenue</button>
+        </div>
+    </div>
+
+    <div id="progressContainer" class="progress-bar-container">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressText" class="progress-text"></div>
+    </div>
+    <div id="errorContainer"></div>
+
+    <div id="summarySection" class="table-section">
+        <h3 id="summaryTitle">3-Month Cumulative Revenue (TWD M)</h3>
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <div>
+                <table id="summaryTableLeft"><thead id="summaryHeadLeft"></thead><tbody id="summaryBodyLeft"></tbody></table>
+            </div>
+            <div>
+                <table id="summaryTableRight" style="cursor: copy;"><thead id="summaryHeadRight"></thead><tbody id="summaryBodyRight" style="user-select: all;"></tbody></table>
+            </div>
+            <div>
+                <table id="summaryTableLastMonth" style="cursor: copy;"><thead id="summaryHeadLastMonth"></thead><tbody id="summaryBodyLastMonth" style="user-select: all;"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div id="monthlySection" class="table-section">
+        <h3>Monthly Revenue (TWD M)</h3>
+        <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+            <table id="monthlyTable"><thead id="monthlyHead"></thead><tbody id="monthlyBody"></tbody></table>
+        </div>
+    </div>
+
+    <div id="threeMonthSection" class="table-section">
+        <h3 id="threeMonthTitle">Last 3 Months (TWD M)</h3>
+        <div style="overflow-x: auto;">
+            <table id="threeMonthTable"><thead id="threeMonthHead"></thead><tbody id="threeMonthBody"></tbody></table>
+        </div>
+    </div>
+
+    <div id="ytdSection" class="table-section">
+        <h3 id="ytdTitle">Year-to-Date (TWD M)</h3>
+        <div style="overflow-x: auto;">
+            <table id="ytdTable"><thead id="ytdHead"></thead><tbody id="ytdBody"></tbody></table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_REVENUE = '/api/revenue';
+
+    function title_case(str) {
+        if (!str) return str;
+        return str.toLowerCase().replace(/(^|\s)\w/g, c => c.toUpperCase());
+    }
+
+    // --- Defaults ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        // Default to last completed month
+        let y = now.getFullYear(), m = now.getMonth(); // getMonth is 0-indexed, so this is previous month
+        if (m === 0) { m = 12; y--; }
+        document.getElementById('refDate').value = `${y}-${String(m).padStart(2, '0')}`;
+
+        document.getElementById('summaryTableRight').addEventListener('click', (e) => {
+            const tbody = document.getElementById('summaryBodyRight');
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(tbody);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            const text = Array.from(tbody.querySelectorAll('tr'))
+                .map(tr => tr.cells[0].textContent.trim())
+                .join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                const tip = document.createElement('div');
+                tip.textContent = 'Copied!';
+                tip.style.cssText = 'position:fixed;padding:6px 14px;background:#28a745;color:#fff;border-radius:6px;font-size:13px;font-weight:600;pointer-events:none;z-index:9999;transition:opacity 0.3s;';
+                tip.style.top = (e.clientY - 35) + 'px';
+                tip.style.left = (e.clientX + 10) + 'px';
+                document.body.appendChild(tip);
+                setTimeout(() => { tip.style.opacity = '0'; }, 800);
+                setTimeout(() => { tip.remove(); }, 1100);
+            }).catch(() => {});
+        });
+
+        document.getElementById('summaryTableLastMonth').addEventListener('click', (e) => {
+            const tbody = document.getElementById('summaryBodyLastMonth');
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(tbody);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            const text = Array.from(tbody.querySelectorAll('tr'))
+                .map(tr => tr.cells[0].textContent.trim())
+                .join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                const tip = document.createElement('div');
+                tip.textContent = 'Copied!';
+                tip.style.cssText = 'position:fixed;padding:6px 14px;background:#28a745;color:#fff;border-radius:6px;font-size:13px;font-weight:600;pointer-events:none;z-index:9999;transition:opacity 0.3s;';
+                tip.style.top = (e.clientY - 35) + 'px';
+                tip.style.left = (e.clientX + 10) + 'px';
+                document.body.appendChild(tip);
+                setTimeout(() => { tip.style.opacity = '0'; }, 800);
+                setTimeout(() => { tip.remove(); }, 1100);
+            }).catch(() => {});
+        });
+    });
+
+    // --- Ticker Parsing ---
+    function parse_tickers(raw) {
+        const tokens = raw.split(/[\n,\t;]+/).map(s => s.trim()).filter(Boolean);
+        const codes = [];
+        for (const t of tokens) {
+            const cleaned = t.replace(/[\s.]*[Tt][Tt]\s*$/, '').trim();
+            if (/^\d{4,5}$/.test(cleaned) && !codes.includes(cleaned)) {
+                codes.push(cleaned);
+            }
+        }
+        return codes;
+    }
+
+    // --- Data Fetching ---
+    async function fetch_revenue(code, start_date) {
+        const resp = await fetch(API_REVENUE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyCode: code, startDate: start_date })
+        });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || `HTTP ${resp.status}`);
+        }
+        return await resp.json();
+    }
+
+    async function fetch_all(tickers, start_date, on_progress) {
+        const results = [];
+        const batch_size = 3;
+        for (let i = 0; i < tickers.length; i += batch_size) {
+            const batch = tickers.slice(i, i + batch_size);
+            const settled = await Promise.allSettled(
+                batch.map(code => fetch_revenue(code, start_date))
+            );
+            settled.forEach((r, j) => {
+                const code = batch[j];
+                if (r.status === 'fulfilled' && r.value && r.value.data) {
+                    const cn = r.value.companyName || code;
+                    const en = r.value.companyNameEn || '';
+                    const py = r.value.companyNamePinyin || '';
+                    let display = cn;
+                    if (py) display += ` ${py}`;
+                    if (en) display += ` (${title_case(en)})`;
+                    results.push({
+                        code: r.value.companyCode || code,
+                        name: display,
+                        data: r.value.data
+                    });
+                } else {
+                    results.push({ code, name: code, data: [] });
+                }
+            });
+            on_progress(Math.min(i + batch_size, tickers.length), tickers.length);
+            if (i + batch_size < tickers.length) {
+                await new Promise(r => setTimeout(r, 400));
+            }
+        }
+        return results;
+    }
+
+    // --- Formatting ---
+    function fmt_num(v) {
+        if (v === null || v === undefined || isNaN(v)) return '';
+        return v.toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+    }
+    function fmt_pct(v) {
+        if (v === null || v === undefined || isNaN(v)) return '';
+        return v.toFixed(1) + '%';
+    }
+    function pct_class(v) {
+        if (v === null || v === undefined || isNaN(v)) return '';
+        return v >= 0 ? 'positive' : 'negative';
+    }
+
+    // --- Month Utilities ---
+    function month_key(y, m) { return `${y}-${String(m).padStart(2, '0')}`; }
+
+    function generate_month_list(ref_year, ref_month, count) {
+        const months = [];
+        let y = ref_year, m = ref_month;
+        for (let i = 0; i < count; i++) {
+            months.push({ year: y, month: m });
+            m--;
+            if (m < 1) { m = 12; y--; }
+        }
+        return months; // most recent first
+    }
+
+    function find_month(data, y, m) {
+        return data.find(d => d.year === y && (d.month || d.month === 0) && d.month === m) || null;
+    }
+
+    // --- Table Builders ---
+
+    function build_summary_table(companies, ref_year, ref_month) {
+        const months = generate_month_list(ref_year, ref_month, 3);
+        const months_asc = [...months].reverse();
+        const m_start = month_key(months_asc[0].year, months_asc[0].month);
+        const m_end = month_key(months_asc[2].year, months_asc[2].month);
+
+        document.getElementById('summaryTitle').textContent =
+            `Summary: ${m_end} (TWD M)`;
+
+        const head_left = document.getElementById('summaryHeadLeft');
+        const body_left = document.getElementById('summaryBodyLeft');
+        const head_right = document.getElementById('summaryHeadRight');
+        const body_right = document.getElementById('summaryBodyRight');
+        const head_lm = document.getElementById('summaryHeadLastMonth');
+        const body_lm = document.getElementById('summaryBodyLastMonth');
+
+        head_left.innerHTML = '<tr><th style="text-align:left;">Ticker</th><th style="text-align:left;">Name</th></tr>';
+        head_right.innerHTML = '<tr><th>3M Rev</th></tr>';
+        head_lm.innerHTML = `<tr><th>${m_end} Rev</th></tr>`;
+
+        let rows_left = '';
+        let rows_right = '';
+        let rows_lm = '';
+        companies.forEach(c => {
+            let sum = 0;
+            let count = 0;
+            for (const { year, month } of months_asc) {
+                const d = find_month(c.data, year, month);
+                if (d && d.revenue !== null && d.revenue !== undefined) {
+                    sum += d.revenue;
+                    count++;
+                }
+            }
+            const last = find_month(c.data, ref_year, ref_month);
+            const last_rev = last ? last.revenue : null;
+
+            if (count === 3 || (last_rev !== null && last_rev !== undefined)) {
+                rows_left += `<tr><td style="text-align:left; font-weight:600;">${c.code}</td>`;
+                rows_left += `<td style="text-align:left;">${c.name}</td></tr>`;
+                rows_right += `<tr><td>${count === 3 ? fmt_num(sum) : ''}</td></tr>`;
+                rows_lm += `<tr><td>${(last_rev !== null && last_rev !== undefined) ? fmt_num(last_rev) : ''}</td></tr>`;
+            }
+        });
+        body_left.innerHTML = rows_left;
+        body_right.innerHTML = rows_right;
+        body_lm.innerHTML = rows_lm;
+    }
+
+    function build_monthly_table(companies, ref_year, ref_month, num_months) {
+        const months = generate_month_list(ref_year, ref_month, num_months);
+        const head = document.getElementById('monthlyHead');
+        const body = document.getElementById('monthlyBody');
+
+        // Header row 1: company names
+        let h1 = '<tr><th class="date-col" rowspan="2">Date</th>';
+        companies.forEach(c => {
+            h1 += `<th class="company-header" colspan="2">${c.code} ${c.name}</th>`;
+        });
+        h1 += '</tr>';
+
+        // Header row 2: Rev / YoY
+        let h2 = '<tr>';
+        companies.forEach(() => {
+            h2 += '<th class="border-left">Rev</th><th>YoY%</th>';
+        });
+        h2 += '</tr>';
+
+        head.innerHTML = h1 + h2;
+
+        // Body rows
+        let rows = '';
+        for (const { year, month } of months) {
+            rows += `<tr><td class="date-col">${month_key(year, month)}</td>`;
+            companies.forEach(c => {
+                const d = find_month(c.data, year, month);
+                const rev = d ? d.revenue : null;
+                const yoy = d ? d.yoy_percent : null;
+                rows += `<td class="border-left">${fmt_num(rev)}</td>`;
+                rows += `<td class="${pct_class(yoy)}">${fmt_pct(yoy)}</td>`;
+            });
+            rows += '</tr>';
+        }
+        body.innerHTML = rows;
+    }
+
+    function build_three_month_table(companies, ref_year, ref_month) {
+        const months = generate_month_list(ref_year, ref_month, 3); // [m0, m-1, m-2] most recent first
+        const months_asc = [...months].reverse(); // oldest first for display
+
+        const title = document.getElementById('threeMonthTitle');
+        const m_start = month_key(months_asc[0].year, months_asc[0].month);
+        const m_end = month_key(months_asc[2].year, months_asc[2].month);
+        title.textContent = `3-Month Summary: ${m_start} to ${m_end} (TWD M)`;
+
+        const head = document.getElementById('threeMonthHead');
+        const body = document.getElementById('threeMonthBody');
+
+        let h1 = '<tr><th class="date-col" rowspan="2">Date</th>';
+        companies.forEach(c => {
+            h1 += `<th class="company-header" colspan="2">${c.code} ${c.name}</th>`;
+        });
+        h1 += '</tr><tr>';
+        companies.forEach(() => {
+            h1 += '<th class="border-left">Rev</th><th>YoY%</th>';
+        });
+        h1 += '</tr>';
+        head.innerHTML = h1;
+
+        // Individual month rows (oldest first)
+        let rows = '';
+        for (const { year, month } of months_asc) {
+            rows += `<tr><td class="date-col">${month_key(year, month)}</td>`;
+            companies.forEach(c => {
+                const d = find_month(c.data, year, month);
+                rows += `<td class="border-left">${fmt_num(d ? d.revenue : null)}</td>`;
+                rows += `<td class="${pct_class(d ? d.yoy_percent : null)}">${fmt_pct(d ? d.yoy_percent : null)}</td>`;
+            });
+            rows += '</tr>';
+        }
+
+        // Sum row
+        rows += '<tr class="sum-row"><td class="date-col" style="background:#f0f0f0;">3M Total</td>';
+        companies.forEach(c => {
+            let sum_this = 0, sum_last = 0;
+            let valid_this = 0, valid_last = 0;
+            for (const { year, month } of months_asc) {
+                const d = find_month(c.data, year, month);
+                if (d && d.revenue !== null && d.revenue !== undefined) {
+                    sum_this += d.revenue;
+                    valid_this++;
+                }
+                // Same month last year
+                const d_ly = find_month(c.data, year - 1, month);
+                if (d_ly && d_ly.revenue !== null && d_ly.revenue !== undefined) {
+                    sum_last += d_ly.revenue;
+                    valid_last++;
+                }
+            }
+            const yoy_3m = (valid_this === 3 && valid_last === 3 && sum_last > 0)
+                ? ((sum_this - sum_last) / sum_last) * 100
+                : null;
+            rows += `<td class="border-left">${valid_this > 0 ? fmt_num(sum_this) : ''}</td>`;
+            rows += `<td class="${pct_class(yoy_3m)}">${fmt_pct(yoy_3m)}</td>`;
+        });
+        rows += '</tr>';
+
+        body.innerHTML = rows;
+    }
+
+    function build_ytd_table(companies, ref_year, ref_month) {
+        const title = document.getElementById('ytdTitle');
+        title.textContent = `Year-to-Date through ${month_key(ref_year, ref_month)} (TWD M)`;
+
+        const head = document.getElementById('ytdHead');
+        const body = document.getElementById('ytdBody');
+
+        head.innerHTML = '<tr><th style="text-align:left;">Ticker</th><th style="text-align:left;">Name</th>' +
+            '<th>YTD Rev</th><th>Prior Yr YTD</th><th>YTD YoY%</th></tr>';
+
+        let rows = '';
+        companies.forEach(c => {
+            // YTD from reference month
+            const d = find_month(c.data, ref_year, ref_month);
+            const ytd = d ? d.ytd_revenue : null;
+
+            // Same month last year for prior YTD
+            const d_ly = find_month(c.data, ref_year - 1, ref_month);
+            const ytd_ly = d_ly ? d_ly.ytd_revenue : null;
+
+            const yoy = (ytd !== null && ytd_ly !== null && ytd_ly > 0)
+                ? ((ytd - ytd_ly) / ytd_ly) * 100
+                : null;
+
+            rows += `<tr>`;
+            rows += `<td style="text-align:left; font-weight:600;">${c.code}</td>`;
+            rows += `<td style="text-align:left;">${c.name}</td>`;
+            rows += `<td>${fmt_num(ytd)}</td>`;
+            rows += `<td>${fmt_num(ytd_ly)}</td>`;
+            rows += `<td class="${pct_class(yoy)}">${fmt_pct(yoy)}</td>`;
+            rows += '</tr>';
+        });
+        body.innerHTML = rows;
+    }
+
+    // --- Main ---
+    document.getElementById('fetchBtn').addEventListener('click', run);
+    document.addEventListener('keypress', e => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && !document.getElementById('fetchBtn').disabled) {
+            run();
+        }
+    });
+
+    async function run() {
+        const raw = document.getElementById('tickerInput').value;
+        const tickers = parse_tickers(raw);
+        const ref_val = document.getElementById('refDate').value;
+        const num_months = parseInt(document.getElementById('numMonths').value) || 13;
+
+        document.getElementById('errorContainer').innerHTML = '';
+
+        if (tickers.length === 0) {
+            document.getElementById('errorContainer').innerHTML =
+                '<div class="error-message">No valid tickers found. Enter 4-5 digit codes.</div>';
+            return;
+        }
+        if (!ref_val) {
+            document.getElementById('errorContainer').innerHTML =
+                '<div class="error-message">Select a reference month.</div>';
+            return;
+        }
+
+        const [ref_year, ref_month] = ref_val.split('-').map(Number);
+
+        // Compute start date: need enough history for monthly table + YoY for 3M and YTD
+        // Fetch from (ref_year - 2, 1) to cover everything
+        const start_date = `${ref_year - 2}-01`;
+
+        const btn = document.getElementById('fetchBtn');
+        const prog_container = document.getElementById('progressContainer');
+        const prog_bar = document.getElementById('progressBar');
+        const prog_text = document.getElementById('progressText');
+
+        btn.disabled = true;
+        prog_container.style.display = 'block';
+        prog_bar.style.width = '0%';
+        prog_text.textContent = `0 / ${tickers.length}`;
+
+        // Hide tables
+        document.getElementById('summarySection').style.display = 'none';
+        document.getElementById('monthlySection').style.display = 'none';
+        document.getElementById('threeMonthSection').style.display = 'none';
+        document.getElementById('ytdSection').style.display = 'none';
+
+        try {
+            const companies = await fetch_all(tickers, start_date, (done, total) => {
+                const pct = Math.round((done / total) * 100);
+                prog_bar.style.width = pct + '%';
+                prog_text.textContent = `${done} / ${total}`;
+            });
+
+            const valid = companies.filter(c => c.data.length > 0);
+            const failed = companies.filter(c => c.data.length === 0);
+
+            if (failed.length > 0) {
+                document.getElementById('errorContainer').innerHTML =
+                    `<div class="error-message">No data for: ${failed.map(c => c.code).join(', ')}</div>`;
+            }
+
+            if (valid.length === 0) {
+                return;
+            }
+
+            build_summary_table(valid, ref_year, ref_month);
+            document.getElementById('summarySection').style.display = 'block';
+
+            build_monthly_table(valid, ref_year, ref_month, num_months);
+            document.getElementById('monthlySection').style.display = 'block';
+
+            build_three_month_table(valid, ref_year, ref_month);
+            document.getElementById('threeMonthSection').style.display = 'block';
+
+            build_ytd_table(valid, ref_year, ref_month);
+            document.getElementById('ytdSection').style.display = 'block';
+
+        } catch (err) {
+            document.getElementById('errorContainer').innerHTML =
+                `<div class="error-message">Error: ${err.message}</div>`;
+        } finally {
+            btn.disabled = false;
+            prog_container.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>

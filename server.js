@@ -262,8 +262,8 @@ app.get('/api/search-company', async (req, res) => {
     try {
         const db = getDb();
         const companies = await db.all(
-            'SELECT code, name FROM companies WHERE code LIKE ? OR name LIKE ? LIMIT 10',
-            `${query}%`, `%${query}%`
+            'SELECT code, name, name_en, name_pinyin FROM companies WHERE code LIKE ? OR name LIKE ? OR name_en LIKE ? OR name_pinyin LIKE ? LIMIT 10',
+            `${query}%`, `%${query}%`, `%${query}%`, `%${query}%`
         );
         res.json(companies);
     } catch (error) {
@@ -351,15 +351,18 @@ app.post('/api/revenue', async (req, res) => {
         const firstValidResult = finalResults.find(r => r.companyName);
         if (firstValidResult) {
             companyName = firstValidResult.companyName;
-        } else {
-            const company = await db.get('SELECT name FROM companies WHERE code = ?', companyCode);
-            companyName = company ? company.name : '';
         }
 
+        const company = await db.get('SELECT name, name_en, name_pinyin FROM companies WHERE code = ?', companyCode);
+        if (!companyName) companyName = company ? company.name : '';
+        const companyNameEn = company ? company.name_en : '';
+        const companyNamePinyin = company ? company.name_pinyin : '';
 
         res.json({
             companyCode,
             companyName,
+            companyNameEn,
+            companyNamePinyin,
             data: finalResults
         });
 
@@ -381,19 +384,17 @@ const PORT = process.env.PORT || 3001;
 })();
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+let shutting_down = false;
+process.on('SIGINT', async () => {
+    if (shutting_down) return;
+    shutting_down = true;
     console.log('\n👋 Shutting down server...');
-    const db = getDb();
-    if (db) {
-        db.close((err) => {
-            if (err) {
-                console.error('❌ Error closing the database', err.message);
-            } else {
-                console.log('✅ Database connection closed.');
-            }
-            process.exit(0);
-        });
-    } else {
-        process.exit(0);
+    try {
+        const db = getDb();
+        if (db) await db.close();
+        console.log('✅ Database connection closed.');
+    } catch (e) {
+        // ignore
     }
+    process.exit(0);
 });

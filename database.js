@@ -19,9 +19,24 @@ async function initializeDatabase() {
         await db.exec(`
             CREATE TABLE IF NOT EXISTS companies (
                 code TEXT PRIMARY KEY,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                name_en TEXT
             );
         `);
+
+        // Migration: add name_en if missing on existing databases
+        try {
+            await db.exec(`ALTER TABLE companies ADD COLUMN name_en TEXT`);
+        } catch (e) {
+            // Column already exists, ignore
+        }
+
+        // Migration: add name_pinyin if missing
+        try {
+            await db.exec(`ALTER TABLE companies ADD COLUMN name_pinyin TEXT`);
+        } catch (e) {
+            // Column already exists, ignore
+        }
 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS revenues (
